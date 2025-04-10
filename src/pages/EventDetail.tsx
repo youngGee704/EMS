@@ -1,21 +1,69 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { mockEvents } from '@/data/mockEvents';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, Users, User } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, User, Share2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 const EventDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [event, setEvent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
   
-  const event = mockEvents.find(event => event.id === id);
+  useEffect(() => {
+    // First, look for the event in localStorage
+    const localEvents = JSON.parse(localStorage.getItem('events') || '[]');
+    const localEvent = localEvents.find((event: any) => event.id === id);
+    
+    // If found locally, use that event data
+    if (localEvent) {
+      // Add default values for registered and capacity if they don't exist
+      setEvent({
+        ...localEvent,
+        registered: localEvent.registered || 0,
+        capacity: localEvent.capacity || 100,
+        organizer: localEvent.organizer || 'Event Organizer'
+      });
+    } 
+    // Otherwise, try to find the event in mock data
+    else {
+      const mockEvent = mockEvents.find(event => event.id === id);
+      if (mockEvent) {
+        setEvent(mockEvent);
+      }
+    }
+    
+    setLoading(false);
+    
+    // Generate share URL
+    setShareUrl(`${window.location.origin}/events/${id}`);
+  }, [id]);
+  
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="container py-12">
+          <p>Loading event details...</p>
+        </div>
+      </MainLayout>
+    );
+  }
   
   if (!event) {
     return (
@@ -32,10 +80,43 @@ const EventDetail = () => {
   const registrationPercentage = (event.registered / event.capacity) * 100;
   
   const handleRegister = () => {
+    // Get the event from localStorage to update it
+    const localEvents = JSON.parse(localStorage.getItem('events') || '[]');
+    const updatedEvents = localEvents.map((e: any) => {
+      if (e.id === event.id) {
+        return {
+          ...e,
+          registered: (e.registered || 0) + 1
+        };
+      }
+      return e;
+    });
+    
+    localStorage.setItem('events', JSON.stringify(updatedEvents));
+    
+    // Update the UI
+    setEvent({
+      ...event,
+      registered: event.registered + 1
+    });
+    
     toast({
       title: "Registration Successful",
       description: `You've successfully registered for ${event.title}`,
     });
+  };
+  
+  const handleShare = () => {
+    setIsShareDialogOpen(true);
+  };
+  
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(shareUrl);
+    toast({
+      title: "Link Copied",
+      description: "Event link has been copied to clipboard",
+    });
+    setIsShareDialogOpen(false);
   };
 
   return (
@@ -98,6 +179,14 @@ const EventDetail = () => {
                   Register Now
                 </Button>
                 
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center justify-center" 
+                  onClick={handleShare}
+                >
+                  <Share2 className="mr-2 h-4 w-4" /> Share Event
+                </Button>
+                
                 <div className="flex items-center justify-center text-sm text-muted-foreground mt-4">
                   <Users className="mr-2 h-4 w-4" />
                   <span>{event.registered} people registered</span>
@@ -107,6 +196,25 @@ const EventDetail = () => {
           </div>
         </div>
       </div>
+      
+      <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share this event</DialogTitle>
+            <DialogDescription>
+              Copy the link below to share this event with friends
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2 mt-4">
+            <Input 
+              value={shareUrl} 
+              readOnly 
+              onClick={(e) => e.currentTarget.select()}
+            />
+            <Button onClick={copyToClipboard}>Copy</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

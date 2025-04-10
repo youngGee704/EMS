@@ -7,17 +7,32 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
 
+interface Event {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  category: string;
+  description: string;
+  image?: string;
+  [key: string]: any;
+}
+
 const Events = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [events, setEvents] = useState([...mockEvents]);
+  const [events, setEvents] = useState<Event[]>([]);
   
-  // Load events from localStorage on component mount
+  // Load events from localStorage and merge with mock events on component mount
   useEffect(() => {
     const localEvents = JSON.parse(localStorage.getItem('events') || '[]');
-    if (localEvents.length > 0) {
-      setEvents([...localEvents, ...mockEvents]);
-    }
+    
+    // Combine local events with mock events, avoiding duplicates by ID
+    const allEventIds = new Set(localEvents.map((event: Event) => event.id));
+    const filteredMockEvents = mockEvents.filter(event => !allEventIds.has(event.id));
+    
+    setEvents([...localEvents, ...filteredMockEvents]);
   }, []);
   
   // Get unique categories
@@ -25,9 +40,13 @@ const Events = () => {
   
   // Filter events based on search term and category
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          event.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = 
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.location.toLowerCase().includes(searchTerm.toLowerCase());
+      
     const matchesCategory = categoryFilter === 'all' || event.category === categoryFilter;
+    
     return matchesSearch && matchesCategory;
   });
 
@@ -41,7 +60,7 @@ const Events = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search events..."
+              placeholder="Search events by title, description or location..."
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}

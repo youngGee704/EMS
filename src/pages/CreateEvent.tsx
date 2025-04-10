@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
-import { CalendarIcon, Clock, MapPin, Users } from 'lucide-react';
+import { CalendarIcon, Clock, MapPin, Users, User } from 'lucide-react';
 
 // Define the event schema
 const eventSchema = z.object({
@@ -22,7 +22,11 @@ const eventSchema = z.object({
   time: z.string().min(1, 'Time is required'),
   location: z.string().min(3, 'Location must be at least 3 characters long'),
   category: z.string().min(1, 'Category is required'),
-  image: z.string().optional(),
+  capacity: z.string().refine(val => !isNaN(Number(val)) && Number(val) > 0, {
+    message: 'Capacity must be a positive number',
+  }),
+  organizer: z.string().min(2, 'Organizer name is required'),
+  image: z.string().optional()
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
@@ -46,6 +50,8 @@ const defaultValues: Partial<EventFormValues> = {
   time: '',
   location: '',
   category: '',
+  capacity: '100',
+  organizer: '',
   image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000',
 };
 
@@ -63,6 +69,8 @@ const CreateEvent = () => {
     const newEvent = {
       id: uuidv4(),
       ...data,
+      capacity: Number(data.capacity),
+      registered: 0,
     };
 
     // Get existing events from localStorage or initialize empty array
@@ -80,8 +88,8 @@ const CreateEvent = () => {
       description: "Your event has been successfully created!",
     });
     
-    // Navigate to the events page
-    navigate('/events');
+    // Navigate to the event detail page
+    navigate(`/events/${newEvent.id}`);
   };
 
   return (
@@ -176,6 +184,47 @@ const CreateEvent = () => {
                   </FormItem>
                 )}
               />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="organizer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organizer</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input placeholder="Your name or organization" className="pl-10" {...field} />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="capacity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Capacity</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            type="number" 
+                            placeholder="Maximum number of participants" 
+                            className="pl-10" 
+                            {...field} 
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               <FormField
                 control={form.control}

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import EventCard from '@/components/events/EventCard';
 import { mockEvents } from '@/data/mockEvents';
@@ -10,12 +10,21 @@ import { Search } from 'lucide-react';
 const Events = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [events, setEvents] = useState([...mockEvents]);
+  
+  // Load events from localStorage on component mount
+  useEffect(() => {
+    const localEvents = JSON.parse(localStorage.getItem('events') || '[]');
+    if (localEvents.length > 0) {
+      setEvents([...localEvents, ...mockEvents]);
+    }
+  }, []);
   
   // Get unique categories
-  const categories = Array.from(new Set(mockEvents.map(event => event.category)));
+  const categories = Array.from(new Set(events.map(event => event.category)));
   
   // Filter events based on search term and category
-  const filteredEvents = mockEvents.filter(event => {
+  const filteredEvents = events.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           event.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || event.category === categoryFilter;

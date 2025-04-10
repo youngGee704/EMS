@@ -33,9 +33,9 @@ const DevDot = () => {
           <div className="space-y-4 py-4">
             <div className="flex flex-col items-center space-y-2">
               <img 
-                src="https://github.com/identicons/innocent-goodness.png" 
+                src="/lovable-uploads/6b72926b-06f3-4259-8429-69d079a5202e.png" 
                 alt="Innocent Goodness" 
-                className="h-20 w-20 rounded-full"
+                className="h-32 w-32 rounded-full object-cover"
               />
               <h3 className="text-lg font-semibold">Innocent Goodness</h3>
               <p className="text-center text-sm text-muted-foreground">
@@ -51,7 +51,7 @@ const DevDot = () => {
                 </a>
               </Button>
               <Button variant="outline" asChild>
-                <a href="https://github.com/innocent-goodness" target="_blank" rel="noopener noreferrer" className="flex items-center">
+                <a href="https://github.com/youngGee704" target="_blank" rel="noopener noreferrer" className="flex items-center">
                   <GithubIcon className="mr-2 h-4 w-4" />
                   GitHub
                 </a>
